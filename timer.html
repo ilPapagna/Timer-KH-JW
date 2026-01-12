@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regia Timer V7 - Presets</title>
+    <style>
+        /* --- STILE (Base V6 + Preset Toolbar) --- */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1e1e1e;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            min-height: 40px;
+        }
+
+        .header-left { display: flex; flex-direction: column; }
+        .header-right { display: flex; gap: 10px; align-items: center; }
+
+        .app-title { margin: 0; font-size: 1.2rem; color: #eee; }
+        .total-status { font-size: 0.9rem; color: #aaa; margin-top: 5px; }
+
+        /* Pulsanti Toolbar */
+        .btn-tool {
+            padding: 6px 12px;
+            border: 1px solid #555;
+            background: #333;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .btn-tool:hover { background: #555; }
+        .btn-save { background: #00796B; border-color: #004D40; } /* Verde scuro */
+        .btn-load { background: #F57F17; border-color: #E65100; color: black; font-weight: bold;} /* Arancio */
+
+        .btn-dual {
+            background-color: #673AB7; /* Viola */
+            color: white;
+            border: 1px solid #888;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .btn-dual:hover { background-color: #7E57C2; }
+
+
+        /* Timer Area */
+        .timer-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            background: #121212;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        #currentSpeaker {
+            font-size: 2rem;
+            margin: 0;
+            color: #ccc;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;
+        }
+
+        .time-big {
+            font-size: 8rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            font-family: monospace;
+            cursor: pointer;
+        }
+        
+        .live-edit-controls { display: flex; gap: 15px; margin-top: 10px; opacity: 0.8; transition: opacity 0.2s;}
+        .live-edit-controls:hover { opacity: 1; }
+
+        .btn-mini {
+            background: #444; color: white; border: 1px solid #666;
+            padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; cursor: pointer;
+        }
+        .btn-mini:hover { background: #666; }
+
+        /* Colori Stati Timer */
+        .time-countdown { color: white; }
+        .time-overtime { color: #ff4444; }
+        .time-stopwatch { color: #00E5FF; }
+
+        /* Controlli */
+        .controls {
+            display: flex; justify-content: center; gap: 20px; padding: 10px;
+            background: #252525; border-radius: 10px; margin-bottom: 10px;
+        }
+
+        button.main-ctrl {
+            padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 1rem; font-weight: bold; transition: transform 0.1s;
+        }
+        button.main-ctrl:active { transform: scale(0.98); }
+        .btn-start { background-color: #00C853; color: white; width: 140px; }
+        .btn-pause { background-color: #ff9800; color: white; width: 140px; }
+        .btn-next { background-color: #2979FF; color: white; }
+        .btn-reset { background-color: #d32f2f; color: white; }
+
+        /* Lista */
+        .schedule-container {
+            height: 35%; display: flex; flex-direction: column;
+            background: #222; border-radius: 8px; padding: 10px;
+        }
+
+        .schedule-list { flex-grow: 1; overflow-y: auto; margin-bottom: 10px; }
+
+        .segment-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; border-bottom: 1px solid #333; background: #2a2a2a;
+        }
+        .segment-item.past { opacity: 0.5; background: #1f1f1f; }
+        .segment-item.active { background-color: #1565C0; color: white; border-left: 5px solid #fff; }
+
+        .item-left { display: flex; align-items: center; gap: 10px; flex-grow: 1; overflow: hidden;}
+        .item-right { display: flex; align-items: center; gap: 5px; min-width: 150px; justify-content: flex-end; }
+
+        .start-time-badge {
+            background: #333; color: #ddd; font-family: monospace; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.9rem; border: 1px solid #555; display: flex; align-items: center; gap: 5px;
+        }
+        .start-time-badge::before { content: '🕒'; font-size: 0.8em; }
+
+        .type-badge { font-size: 0.7em; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; min-width: 45px; text-align: center; }
+        .badge-timer { background: #444; color: #ccc; }
+        .badge-chrono { background: #00E5FF; color: #000; font-weight: bold; }
+
+        .move-btn { background: transparent; color: #888; padding: 2px 6px; cursor: pointer; font-size: 1.1rem;}
+        .move-btn:hover { color: white; background: #444; border-radius: 4px; }
+
+        .add-form { display: flex; gap: 10px; flex-wrap: wrap; }
+        input { padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+        #inputName { flex-grow: 1; }
+        #inputDuration { width: 70px; }
+
+        /* Popup Styles */
+        .status-ok { color: white; }
+        .status-warn { color: #ff4444; animation: blink 1s infinite; }
+        .status-blue { color: #00E5FF; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <header>
+            <div class="header-left">
+                <h3 class="app-title">Regia Timer V7</h3>
+                <div class="total-status">Fine stimata: <span id="estimatedEnd" style="color:#fff; font-weight:bold">--:--</span></div>
+            </div>
+            <div class="header-right">
+                <button class="btn-tool btn-save" onclick="exportPreset()">💾 Salva Preset</button>
+                <button class="btn-tool btn-load" onclick="triggerImport()">📂 Carica Preset</button>
+                <input type="file" id="fileInput" accept=".json, .txt" style="display: none;" onchange="handleFileLoad(this)">
+                
+                <div style="width: 1px; height: 20px; background: #555; margin: 0 5px;"></div>
+                
+                <button class="btn-dual" onclick="openProjectorWindow()">🚀 Proiettore</button>
+            </div>
+        </header>
+
+        <div class="timer-display">
+            <h2 id="currentSpeaker">Pronto</h2>
+            <div class="time-big" id="timeDisplay" onclick="manualEditTime()">00:00</div>
+            
+            <div class="live-edit-controls">
+                <button class="btn-mini" onclick="addTime(-1)">-1m</button>
+                <button class="btn-mini" onclick="manualEditTime()">✏️ Modifica</button>
+                <button class="btn-mini" onclick="addTime(1)">+1m</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnMain" class="main-ctrl btn-start" onclick="toggleTimer()">▶ START</button>
+            <button class="main-ctrl btn-next" onclick="nextSegment()">⏭ PROSSIMO</button>
+            <button class="main-ctrl btn-reset" onclick="resetAll()">🗑 RESET</button>
+        </div>
+
+        <div class="schedule-container">
+            <div class="schedule-list" id="listContainer"></div>
+            
+            <div class="add-form">
+                <input type="text" id="inputName" placeholder="Nome Speaker">
+                <input type="number" id="inputDuration" placeholder="Min">
+                <button onclick="addCountdown()" style="background:#00C853; color:white; flex-grow:1; border:none; padding:10px; border-radius:4px; cursor:pointer; font-weight:bold">+ Timer</button>
+                <button onclick="addStopwatch()" style="background:#00E5FF; color:black; font-weight:bold; flex-grow:1; border:none; padding:10px; border-radius:4px; cursor:pointer">+ Crono</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let segments = [];
+        let currentIndex = 0;
+        let counterValue = 0; 
+        let timerInterval = null;
+        let isRunning = false;
+        let projectorWin = null;
+
+        const TYPE_COUNTDOWN = 'countdown';
+        const TYPE_STOPWATCH = 'stopwatch';
+
+        window.onload = function() {
+            const saved = localStorage.getItem('timerDataV7');
+            if (saved) {
+                segments = JSON.parse(saved);
+                if(segments.length > 0) {
+                    currentIndex = getCurrentActiveIndex();
+                    if(currentIndex < segments.length) {
+                         let seg = segments[currentIndex];
+                         counterValue = (seg.type === TYPE_COUNTDOWN) ? seg.duration : 0;
+                         loadSegment(currentIndex, false);
+                    } else {
+                         finishEvent();
+                    }
+                }
+            }
+            setInterval(updateTimelineTimes, 1000); 
+        };
+
+        // --- EXPORT / IMPORT PRESET ---
+        function exportPreset() {
+            if (segments.length === 0) return alert("La lista è vuota, nulla da salvare!");
+            
+            const dataStr = JSON.stringify(segments, null, 2);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            // Crea un nome file con la data di oggi
+            const date = new Date().toISOString().slice(0, 10);
+            const filename = `scaletta_convegno_${date}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileLoad(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (Array.isArray(loadedData)) {
+                        if (segments.length > 0 && !confirm("Attenzione: caricando il preset cancellerai la lista attuale. Continuare?")) {
+                            input.value = '';
+                            return;
+                        }
+                        
+                        // Ferma tutto
+                        stopTimer();
+                        
+                        // Carica i nuovi dati
+                        segments = loadedData;
+                        currentIndex = 0;
+                        
+                        // Pulisce eventuali risultati vecchi nel file importato per ripartire puliti
+                        segments.forEach(s => s.result = null);
+
+                        saveData();
+                        renderList();
+                        loadSegment(0, false);
+                        alert("Preset caricato con successo!");
+                    } else {
+                        alert("Il file non sembra valido (formato errato).");
+                    }
+                } catch (err) {
+                    alert("Errore nella lettura del file. Assicurati sia un .json valido.");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input per permettere di ricaricare lo stesso file
+        }
+        // ------------------------------
+
+        // --- GESTIONE PROIETTORE SAFE VIEW ---
+        function openProjectorWindow() {
+            if (projectorWin && !projectorWin.closed) { projectorWin.focus(); return; }
+            projectorWin = window.open("", "TimerProjectorSafe", "width=800,height=600,menubar=no,toolbar=no,location=no,status=no");
+            if (!projectorWin) { alert("Popup bloccato!"); return; }
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Timer Speaker</title>
+                    <style>
+                        body { 
+                            background-color: black; color: white; margin: 0;
+                            box-sizing: border-box; padding: 4vh 4vw; height: 100vh; width: 100vw;
+                            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+                            font-family: sans-serif; overflow: hidden;
+                        }
+                        #p-speaker { 
+                            font-size: 5vw; margin-bottom: 2vh; text-align: center; color: #ccc;
+                            max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                        }
+                        #p-timer { font-size: 30vw; font-weight: bold; line-height: 1; font-family: monospace; font-variant-numeric: tabular-nums; }
+                        .status-ok { color: white; }
+                        .status-warn { color: #ff4444; animation: blink 1s infinite alternate; }
+                        .status-blue { color: #00E5FF; }
+                        @keyframes blink { from { opacity: 1; } to { opacity: 0.6; } }
+                    </style>
+                </head>
+                <body>
+                    <div id="p-speaker">In attesa...</div>
+                    <div id="p-timer" class="status-ok">--:--</div>
+                </body>
+                </html>
+            `;
+            projectorWin.document.write(htmlContent);
+            projectorWin.document.close();
+            updateDisplay();
+        }
+
+        function syncProjector(text, speaker, statusClass) {
+            if (projectorWin && !projectorWin.closed) {
+                const pTimer = projectorWin.document.getElementById('p-timer');
+                const pSpeaker = projectorWin.document.getElementById('p-speaker');
+                if (pTimer && pSpeaker) {
+                    pTimer.innerText = text;
+                    pTimer.className = statusClass;
+                    pSpeaker.innerText = speaker;
+                }
+            }
+        }
+
+        // --- LOGICA CORE ---
+        function getCurrentActiveIndex() { return currentIndex || 0; }
+        function addCountdown() {
+            const name = document.getElementById('inputName').value || "Speaker " + (segments.length + 1);
+            const mins = parseInt(document.getElementById('inputDuration').value);
+            if (!mins) return alert("Inserisci minuti!");
+            segments.push({ type: TYPE_COUNTDOWN, name: name, duration: mins * 60, result: null });
+            finalizeAdd();
+        }
+        function addStopwatch() {
+            const name = document.getElementById('inputName').value || "Cronometro";
+            segments.push({ type: TYPE_STOPWATCH, name: name, duration: 0, result: null });
+            finalizeAdd();
+        }
+        function finalizeAdd() {
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputDuration').value = '';
+            saveData(); renderList();
+            if (segments.length === 1) loadSegment(0, false);
+            updateTimelineTimes();
+        }
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+        function formatClock(dateObj) { return `${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`; }
+
+        function addTime(minutes) {
+            if(segments.length === 0 || currentIndex >= segments.length) return;
+            counterValue += (minutes * 60); updateDisplay(); updateTimelineTimes();
+        }
+        function manualEditTime() {
+            if(segments.length === 0 || currentIndex >= segments.length) return;
+            const currentMin = Math.floor(Math.abs(counterValue) / 60);
+            const newVal = prompt(`Modifica minuti per "${segments[currentIndex].name}":`, currentMin);
+            if(newVal !== null && !isNaN(newVal)) {
+                counterValue = parseInt(newVal) * 60; updateDisplay(); updateTimelineTimes();
+            }
+        }
+
+        function toggleTimer() {
+            if (segments.length === 0) return alert("Aggiungi elemento!");
+            if (isRunning) stopTimer(); else startTimer();
+        }
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('btnMain').innerText = "⏸ PAUSA";
+            document.getElementById('btnMain').className = "main-ctrl btn-pause";
+            timerInterval = setInterval(() => {
+                if (segments[currentIndex].type === TYPE_COUNTDOWN) counterValue--; else counterValue++;
+                updateDisplay();
+            }, 1000);
+        }
+        function stopTimer() {
+            isRunning = false; clearInterval(timerInterval);
+            document.getElementById('btnMain').innerText = "▶ START";
+            document.getElementById('btnMain').className = "main-ctrl btn-start";
+            updateTimelineTimes();
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('timeDisplay');
+            const spkName = document.getElementById('currentSpeaker');
+            if(currentIndex >= segments.length) return;
+
+            const seg = segments[currentIndex];
+            const absTime = Math.abs(counterValue);
+            let text = formatTime(absTime);
+            let statusClass = "status-ok"; 
+            
+            if (seg.type === TYPE_COUNTDOWN) {
+                if (counterValue < 0) {
+                    text = "-" + text; statusClass = "status-warn";
+                    display.classList.add('time-overtime'); display.classList.remove('time-countdown', 'time-stopwatch');
+                } else {
+                    statusClass = "status-ok";
+                    display.classList.add('time-countdown'); display.classList.remove('time-overtime', 'time-stopwatch');
+                }
+            } else {
+                statusClass = "status-blue";
+                display.classList.add('time-stopwatch'); display.classList.remove('time-overtime', 'time-countdown');
+            }
+            display.innerText = text; spkName.innerText = seg.name;
+            syncProjector(text, seg.name, statusClass);
+        }
+
+        function nextSegment() {
+            logCurrentResult(); stopTimer(); loadSegment(currentIndex + 1, true);
+        }
+        function loadSegment(index, autoStart) {
+            if (index >= segments.length) { finishEvent(); return; }
+            currentIndex = index;
+            const seg = segments[index];
+            counterValue = (seg.type === TYPE_COUNTDOWN) ? seg.duration : 0;
+            renderList(); updateDisplay();
+            if (autoStart) startTimer();
+            updateTimelineTimes();
+        }
+        function finishEvent() {
+            document.getElementById('currentSpeaker').innerText = "FINE CONVEGNO";
+            document.getElementById('timeDisplay').innerText = "END";
+            stopTimer(); syncProjector("END", "Grazie", "status-ok");
+        }
+
+        function renderList() {
+            const list = document.getElementById('listContainer');
+            list.innerHTML = '';
+            segments.forEach((seg, index) => {
+                const div = document.createElement('div');
+                let statusClass = (index < currentIndex) ? 'past' : (index === currentIndex ? 'active' : '');
+                div.className = `segment-item ${statusClass}`;
+                let badge = (seg.type === TYPE_COUNTDOWN) ? `<span class="type-badge badge-timer">TIMER</span>` : `<span class="type-badge badge-chrono">CRONO</span>`;
+                let rightContent = '';
+                if (index < currentIndex && seg.result) rightContent = seg.result;
+                else if (index === currentIndex) rightContent = `<span style="font-size:0.8rem; font-weight:bold; color:white; margin-right:10px">IN ONDA</span>`;
+                else if (index > currentIndex) {
+                    const timeBadge = `<span id="time-badge-${index}" class="start-time-badge">--:--</span>`;
+                    const dur = seg.type === TYPE_COUNTDOWN ? Math.floor(seg.duration/60)+'m' : '∞';
+                    rightContent = `${timeBadge} <span style="color:#888; font-size:0.8rem; min-width:30px; text-align:right">${dur}</span>
+                        <button class="move-btn" onclick="moveItem(${index}, -1)">⬆</button>
+                        <button class="move-btn" onclick="moveItem(${index}, 1)">⬇</button>
+                        <button class="move-btn" style="color:#d32f2f" onclick="deleteItem(${index})">✕</button>`;
+                }
+                div.innerHTML = `<div class="item-left">${badge} <strong>${seg.name}</strong></div><div class="item-right">${rightContent}</div>`;
+                if(index !== currentIndex) div.ondblclick = () => { if(confirm(`Saltare a: ${seg.name}?`)) { logCurrentResult(); stopTimer(); loadSegment(index, true); }};
+                list.appendChild(div);
+            });
+            const activeEl = document.querySelector('.segment-item.active');
+            if(activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            updateTimelineTimes();
+        }
+
+        function updateTimelineTimes() {
+            let secRem = 0;
+            if (segments[currentIndex] && currentIndex < segments.length) {
+                if (segments[currentIndex].type === TYPE_COUNTDOWN && counterValue > 0) secRem += counterValue;
+            }
+            let acc = secRem; let now = new Date();
+            for (let i = currentIndex + 1; i < segments.length; i++) {
+                const badge = document.getElementById(`time-badge-${i}`);
+                if (badge) badge.innerHTML = formatClock(new Date(now.getTime() + (acc * 1000)));
+                if (segments[i].type === TYPE_COUNTDOWN) acc += segments[i].duration;
+            }
+            document.getElementById('estimatedEnd').innerText = formatClock(new Date(now.getTime() + (acc * 1000)));
+        }
+
+        function logCurrentResult() {
+            if (!segments[currentIndex]) return;
+            const seg = segments[currentIndex];
+            let resultHTML = "";
+            const absVal = Math.abs(counterValue);
+            const timeStr = formatTime(absVal);
+            if (seg.type === TYPE_COUNTDOWN) {
+                if (counterValue >= 0) resultHTML = `<span style="color:#00C853; font-weight:bold; font-size:0.9em">+${timeStr}</span>`;
+                else resultHTML = `<span style="color:#ff5252; font-weight:bold; font-size:0.9em">-${timeStr}</span>`;
+            } else {
+                resultHTML = `<span style="color:#00E5FF; font-size:0.9em">${timeStr}</span>`;
+            }
+            segments[currentIndex].result = resultHTML; saveData();
+        }
+        function moveItem(i, dir) { let n = i + dir; if (n < 0 || n >= segments.length || n <= currentIndex) return; [segments[i], segments[n]] = [segments[n], segments[i]]; saveData(); renderList(); }
+        function deleteItem(i) { if(confirm("Eliminare?")) { segments.splice(i, 1); saveData(); renderList(); } }
+        function resetAll() { if(confirm("Reset totale?")) { stopTimer(); segments = []; currentIndex = 0; localStorage.removeItem('timerDataV7'); document.getElementById('currentSpeaker').innerText = "Pronto"; document.getElementById('timeDisplay').innerText = "00:00"; if(projectorWin) syncProjector("--:--", "Attesa", "status-ok"); renderList(); } }
+        function saveData() { localStorage.setItem('timerDataV7', JSON.stringify(segments)); }
+    </script>
+</body>
+</html>
